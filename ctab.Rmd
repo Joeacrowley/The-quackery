@@ -1,0 +1,144 @@
+---
+title: "ctab"
+output: 
+  html_document:  
+    toc: true   
+    toc_depth: 2  
+    toc_float: true
+toc-title: "Table of Contents"
+---
+
+
+
+```{r packages, collapse = T}
+
+library(haven)
+library(tidyverse)
+library(labelled)
+
+```
+
+```{r load data}
+
+# Load BSA teaching data
+df <- read_sav('/Users/joecrowley/R/Data/BSA Teaching Data/spss/spss25/bsa2019_poverty_open.sav', user_na = T)
+
+df %>% 
+  select(skipmeal, NatFrEst, Spend1, RSex, RAgeCat) %>% 
+  look_for()
+
+```
+
+<br> 
+
+# Function to summarise multiple variables
+
+```{r ctab}
+
+ctab <- function(
+    data, # dataframe 
+    vars = NULL, # vector of variable names
+    by, # vector with crossbreak variable name
+    stat = "p", # can be "n" for unweighted count
+    labels = T, # set to FALSE to suppress labels
+    empty_levels = FALSE, # set to TRUE to show empty levels
+    drop_missing = "none" # "b", "p" or "o"
+    ) {
+  
+  drop <- setdiff(c("n", "p"), stat)
+  
+  by_drop <- F
+  vars_drop <- F
+  if(drop_missing %in% c("b","p")){by_drop <- T}
+  if(drop_missing %in% c("b","o")){vars_drop <- T}
+
+  df_int <- data %>% 
+    mutate(across(c({{by}}), 
+                  ~to_factor(.x, 
+                             drop_unused_labels = empty_levels,
+                             user_na_to_na = by_drop
+                             )), 
+           across(c({{vars}}), 
+                  ~to_factor(.x, 
+                             drop_unused_labels = empty_levels,
+                             user_na_to_na = vars_drop
+                             )))
+  
+  if(drop_missing %in% c("b","p")){df_int <- df_int %>% filter(!is.na({{by}}))}
+  if(drop_missing %in% c("b","o")){df_int <- df_int %>% filter(!is.na({{vars}}))}
+  
+  cells <- 
+    df_int %>% count({{vars}}, {{by}}) %>% group_by({{by}}) %>% 
+      mutate(p = round(n / sum(n) * 100, 2)) %>% 
+      select(!all_of(drop)) %>% 
+      pivot_wider(names_from = {{by}}, values_from = all_of(stat))
+  
+  total <- 
+    df_int %>% count({{vars}}) %>% 
+      mutate(p = round(n / sum(n) * 100, 2)) %>% 
+      select(!all_of(drop)) %>% 
+      rename(Total = stat)
+  
+  suppressMessages(tbl <- full_join(cells, total))
+  
+  if(labels == TRUE) {
+    names(tbl)[1] <- data %>% select({{vars}}) %>% var_label(null_action = "fill", unlist = T)
+    }
+  
+  return(tbl)
+  
+}
+
+```
+
+<br> 
+
+# Trials
+
+## Basic test
+
+```{r simple test}
+
+ctab(df, skipmeal, RSex)
+
+```
+
+<br> 
+
+## Unweighted count, suppress labels
+
+```{r test suppressing labels and switching counts}
+
+ctab(df, Spend1, RAgeCat, stat = "n", labels = F)
+
+```
+
+## Drop missing data (includes user NA)
+
+```{r drop all missing data}
+
+ctab(df, Spend1, RAgeCat, stat = "n", labels = F, drop_missing = "b")
+
+```
+
+
+## Drop missing data (predictor only)
+
+```{r drop missing data on predictor only}
+
+ctab(df, Spend1, RAgeCat, stat = "n", labels = F, drop_missing = "p")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
