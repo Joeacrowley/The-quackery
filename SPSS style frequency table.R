@@ -6,6 +6,7 @@
 library(haven)
 library(tidyverse)
 library(labelled)
+library(flextable)
 
 # Load BSA teaching data
 df <- read_sav('/Users/joecrowley/R/Data/BSA Teaching Data/spss/spss25/bsa2019_poverty_open.sav', user_na = T)
@@ -84,6 +85,15 @@ table %>% flextable %>% autofit() %>%
     part = "all"
   )
 
+na_vals <- attr(df$skipmeal, "na_values")
+
+df$skipmeal[df$skipmeal %in% na_vals]
+
+# Filter only the user_na labels
+user_na_labels <- all_labels[names(all_labels) %in% names(all_labels[all_labels %in% na_vals])]
+
+user_na_labels
+
 
 .freq_spss <- function(data, var, format = NULL) {
   # Extract factor...
@@ -91,13 +101,16 @@ table %>% flextable %>% autofit() %>%
   label <- paste0(data %>% select({{var}}) %>% names, " - ", var_label({{variable}}))
   
   # Factor with all levels 
-  var_all <- variable %>% to_factor(levels = "prefixed")
+  var_all <- variable %>% to_factor(levels = "prefixed") %>% fct_drop
   
   # Factor with all non-user NA levels
   var_no_NA <- variable %>% to_factor(levels = "prefixed", user_na_to_na = T) %>% fct_drop
   
   # Factor with all user NA levels
-  var_only_NA <- var_all[!(var_all %in% var_no_NA)] %>% fct_drop
+  user_na <- attr(variable, "na_values")
+  var_only_NA <- variable[variable %in% user_na] %>% to_factor(levels = "prefixed") %>% fct_drop
+  # var_only_NA <- var_all[!(var_all %in% var_no_NA)] %>% fct_drop
+  
   suppressMessages(
   table <- 
     reduce(list(
@@ -147,7 +160,7 @@ table %>% flextable %>% autofit() %>%
       delete_columns("type") %>% 
       set_header_labels(
         n = "Frequency",
-        p = "%", 
+        p = "Percentage", 
         cum_p = "Cumulative %", 
         total_p = "Total \n %", 
         cum_p_total = "Total \n Cumulative %" 
@@ -165,4 +178,5 @@ table %>% flextable %>% autofit() %>%
 
 .freq_spss(data = df, var = skipmeal)
 .freq_spss(data = df, var = skipmeal, format = TRUE)
+.freq_spss(data = df, var = Poverty1, format = TRUE)
 
