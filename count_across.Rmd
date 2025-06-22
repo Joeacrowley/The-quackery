@@ -1,0 +1,136 @@
+---
+title: "count_across"
+output: 
+  html_document:  
+    toc: true   
+    toc_depth: 2  
+    toc_float: true
+toc-title: "Table of Contents"
+---
+
+
+```{r packages, collapse = T}
+
+library(haven)
+library(tidyverse)
+library(labelled)
+
+```
+
+```{r load data}
+
+# Load BSA teaching data
+df <- read_sav('/Users/joecrowley/R/Data/BSA Teaching Data/spss/spss25/bsa2019_poverty_open.sav', user_na = T)
+
+df %>% 
+  select(skipmeal, Politics, Poverty1) %>% 
+  look_for()
+
+```
+
+<br> 
+
+# Function to summarise multiple variables
+
+```{r count_across}
+
+count_across <- 
+  function(
+    data, # dataframe 
+    vars = NULL, # vector of variable names
+    empty_levels = FALSE, # set to TRUE to show empty levels
+    labels = T, # set to FALSE to suppress labels
+    sort = F  # set to TRUE to sort results by n
+    ) {
+  
+  # If 'vars' is NULL then use names of ALL variables in 'data'.
+  if(is.null(vars)) {
+  vars <- names(data) 
+  }
+  
+  # map() across each element of 'vars'
+  result <- map(vars, ~data %>% 
+                  
+          # Set all variables to factors - option to drop or keep empty levels
+          mutate(across(all_of(.x), ~to_factor(.x, drop_unused_labels = empty_levels))) %>% 
+            
+          # Count and percentage in each variable level
+          pull(all_of(.x)) %>% 
+          # Round to decimal places
+          fct_count(prop = T, sort = sort) %>% mutate(p = round(p * 100, 2)) %>% 
+          
+          # Add varibale names and labels as a column
+          mutate(var = paste0(.x, ":- ", var_label(df %>% select(all_of(.x)), null_action = "fill")), .before = 1) %>%
+            
+          # Rename column containing levels to allow stacking
+          rename(levels = f) 
+        ) %>% 
+    bind_rows # bind resulting list into a dataframe
+  
+  # If 'labels' argument is FALSE, remove variable labels.
+  if(labels == FALSE) {result <- result %>% mutate(var = str_split_i(var, ":-", 1))}
+  
+  return(result)
+  
+  }
+
+```
+
+<br> 
+
+# Trials
+
+## Apply to whole dataframe
+
+```{r apply to whole data frame}
+
+df %>% 
+  select(skipmeal, Politics, Poverty1) %>% 
+  count_across()
+
+```
+
+<br> 
+
+## Apply to specific variable
+
+Also, drop empty variable levels
+
+```{r count specific variables}
+
+df %>% count_across("Poverty1", empty_levels = TRUE)
+
+```
+
+<br> 
+
+## Remove variable labels
+
+Also, sort by n.
+
+```{r remove variable labels}
+
+df %>% 
+  select(skipmeal, Politics, Poverty1) %>% 
+  count_across(empty_levels = TRUE, labels = F, sort = T)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
