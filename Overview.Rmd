@@ -1,0 +1,59 @@
+---
+title: "Overview"
+output: html_document
+date: "2025-06-22"
+---
+
+These are quick descriptive tables to get an overview of a dataset. Things like - how many missing values are there? How many levels for each variable in a dataset, what data type are they?
+
+They are functions that do one thing well, that I can write and use quickly and easily. 
+
+Don’t overthink them, don’t make them super flexible - just useful. 
+
+A good example is a nice (but simple) crossbreak function, that works (does not glitch - because it is simple) and is not overly cumbersome. Or, functions that give quick overviews of several variables at once, e.g. taking 5 outcomes with the same levels and displaying them together. A third - taking those 5 outcomes and cross tabulating them in a way that is quick (ish) to look at. 
+
+Limit this to data tables - *not visualisations*. That’s a different sort of challenge. 
+
+**Presentation:-**. 
+
+Think about some ways to present them. A data frame exporter to Huxtable? Then, to Excel or flextable. Write so they don’t need adjusting for different inputs - if possible. 
+
+An approach might be: 
+
+* If simple receives a simple data frame then keep formatting the same, with two arguments:   
+    * Argument one: a set of rows to merge if repeated.  
+    * Perhaps another, whether to fill colour based on table contents.   
+    
+* If it receives a list, then have consistently named componets for:
+    * Adding a caption. 
+    * taking a set of headers and merge them, then append to data table.
+    
+* In either case, could have an option to add footnotes. 
+
+**Tables list:**  
+
+* `count.across` - Proportions and frequencies, across several variables.   
+  * Either, accept a dataframe and count everything, 
+  * Or, secondary argument that is vector of variable names to count.  
+
+* `ctab` - a single crossbreak, percentages, with an option for 'n' instead.  
+
+
+* Merged proportions & frequencies tables. Crossbreaks.
+    * Allow an option to either put variable labels in the headings and levels in the rows; or the reverse. 
+    * Weighted version. 
+* Numeric variables, means, crossbreaks. 
+    * Weighted version. 
+* Multicode tables, proportions and frequencies.
+    * Weighted version. 
+
+When things come to nesting, just map these functions over secondary variables. 
+
+<br> 
+
+**Whereas, the tables proper:-**
+
+* These are for the more mechanical production of larger numbers of tailored tables.  
+* In standardised formats, with more arguments, e.g. NET codes, titles, footnotes, tailored to each.   
+* And more processes going on, e.g. consideration given to base size suppression.   
+
